@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>登入｜工作管理平台</title><link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}"><script src="{{ url_for('static', filename='login.js') }}" defer></script></head>
+<body class="login-page"><header class="login-meta"><time id="login-clock"></time><span>v{{ version }}</span></header><main class="login-card"><div class="brand-mark">架</div><p class="eyebrow">系統架構科</p><h1>工作管理平台</h1><p class="login-subtitle">{{ '隔離測試登入' if mode == 'test' else '公司帳號登入' }}</p>
+<form id="login-form">
+{% if mode == 'test' %}<label for="username">測試身分</label><select name="username" id="username" required><option value="">選擇身分</option>{% for person in identities %}<option value="{{ person.username }}">{{ person.name }}</option>{% endfor %}</select>
+{% else %}<label for="username">AD 帳號</label><input name="username" id="username" autocomplete="username" maxlength="100" required><label for="password">密碼</label><input type="password" name="password" id="password" autocomplete="current-password" required>{% endif %}
+<p id="login-error" role="alert"></p><button type="submit" class="primary">登入</button></form>
+<footer><span>{{ '測試環境' if mode == 'test' else '內網系統' }}</span></footer></main></body></html>
