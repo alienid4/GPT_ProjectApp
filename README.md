@@ -12,7 +12,7 @@
 - 每一包都是**累積包**：從包內 `copy_commands.md` 寫的基準版本（`BASE_VER`）一路到該版本，中間漏掉的不用補。比基準版本舊的機器會被 `patch.sh` 拒絕，請改用完整包。
 - **從 v1.001.0 升級請用完整包**（見本儲存庫的 Releases 頁面，例如 `full-2.000.30`；第二版執行環境有變，修補包不適用）。
 
-目前最新：`patch/20261126/patch_gpt_projectapp_20261126_v2.000.30.tar.gz`（累積 2.000.28 → 2.000.30）。
+目前最新：`patch/20261126/patch_gpt_projectapp_20261126_v2.001.0.tar.gz`（累積 2.000.30 → 2.001.0；更早的 2.000.28 機器先套 `v2.000.30` 那包，或直接用完整包）。
 
 ```bash
 cd /tmp && sha256sum -c patch_gpt_projectapp_YYYYMMDD_v<版本>.sha256
@@ -25,6 +25,23 @@ sudo bash /root/projectapp-patch/ProjectApp_v<版本>-patch_*/patch.sh
 修補包超過 50 MB 時不放進本儲存庫，改放在 Releases 頁面同版本的附件。
 
 > 狀態：**測試候選，不是正式核准**。審查由 Google Gemini（Antigravity）替補擔任，執行紀錄在作者機器產生，只能核對一致性、無法排除偽造；正式部署須使用者本人批准。
+
+## 從 v1.000.0（`/opt/it-workboard`）升級 → 用完整包原地接手，不能用修補包
+
+v1.000.0 是舊的單一目錄配置，`patch.sh` 會拒絕（什麼都不改）。請從 Releases 下載最新的完整升級包（例如 `full-2.001.0`），先核對 sha256 再執行：
+
+```bash
+sha256sum -c ProjectApp_v<版本>-full_<時間>.tar.gz.sha256
+sudo mkdir -m 700 /root/projectapp-bundle
+sudo tar -xzf ProjectApp_v<版本>-full_<時間>.tar.gz -C /root/projectapp-bundle
+B=/root/projectapp-bundle/ProjectApp_v<版本>-full_<時間>
+sudo bash $B/INSTALL.sh --production --check                 # 只列出接手計畫，不改任何東西
+sudo bash $B/INSTALL.sh --production --install --adopt-v1000
+```
+
+- 資料庫與附件留在原位，只換程式；舊目錄 `/opt/it-workboard` 全程不讀寫，留作回退依據；失敗或中斷會自動回到舊版（中斷時重跑同一指令，或 `INSTALL.sh --production --recover`）。
+- 接手後一旦有人寫入新資料，就不能再自動退回 v1.000.0，要退只能用配對備份還原。
+- 驗證範圍：只在「AlmaLinux 9 容器、os-release 模擬成 RHEL 9.6」測過；**真正的 RHEL 9.6 機器還沒驗證**。
 
 ## 本機試用（Linux）
 
