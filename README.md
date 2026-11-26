@@ -4,6 +4,28 @@
 
 提供個人工作看板、多層專案與 WBS、甘特圖、成果確認、附件版本、討論、權限、管理及匯出功能。採 Python 3.11+、Flask、SQLAlchemy 與 Alembic。
 
+## 已安裝的機器要更新 → 看 `patch/`
+
+`patch/YYYYMMDD/patch_gpt_projectapp_YYYYMMDD_v<版本>.tar.gz` 是給**已經裝好第二版的機器**用的更新包（只含變更檔，幾百 KB，不必重抓整包）。
+
+- **永遠套版本最大的那一包就好**：看檔名最後的 `v<版本>`，**照數字比，不要照文字比**（例：`2.000.30` 比 `2.000.9` 新；版本格式是「大版本.小功能.小功能修補」）。版本相同取日期較晚的。
+- 每一包都是**累積包**：從包內 `copy_commands.md` 寫的基準版本（`BASE_VER`）一路到該版本，中間漏掉的不用補。比基準版本舊的機器會被 `patch.sh` 拒絕，請改用完整包。
+- **從 v1.001.0 升級請用完整包**（見本儲存庫的 Releases 頁面，例如 `full-2.000.30`；第二版執行環境有變，修補包不適用）。
+
+目前最新：`patch/20261126/patch_gpt_projectapp_20261126_v2.000.30.tar.gz`（累積 2.000.28 → 2.000.30）。
+
+```bash
+cd /tmp && sha256sum -c patch_gpt_projectapp_YYYYMMDD_v<版本>.sha256
+sudo mkdir -m 700 /root/projectapp-patch
+sudo tar -xzf patch_gpt_projectapp_YYYYMMDD_v<版本>.tar.gz -C /root/projectapp-patch
+sudo bash /root/projectapp-patch/ProjectApp_v<版本>-patch_*/patch.sh
+```
+
+同目錄的 `.sha256` 就是第一行核對用的。`patch.sh` 會先備份、失敗自動退回；重複執行會回報「已是新版」，不會壞。詳細結束碼與退回方式見包內 `copy_commands.md`、`ROLLBACK.md`。
+修補包超過 50 MB 時不放進本儲存庫，改放在 Releases 頁面同版本的附件。
+
+> 狀態：**測試候選，不是正式核准**。審查由 Google Gemini（Antigravity）替補擔任，執行紀錄在作者機器產生，只能核對一致性、無法排除偽造；正式部署須使用者本人批准。
+
 ## 本機試用（Linux）
 
 下列命令從專案根目錄執行，需要網路下載依賴。Linux 須具備 Python 3.11+、venv 及 pyodbc 所需的系統 ODBC runtime；本儲存庫未附 Python、系統套件或離線 wheels。
