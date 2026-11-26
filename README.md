@@ -4,44 +4,34 @@
 
 提供個人工作看板、多層專案與 WBS、甘特圖、成果確認、附件版本、討論、權限、管理及匯出功能。採 Python 3.11+、Flask、SQLAlchemy 與 Alembic。
 
-## 已安裝的機器要更新 → 看 `patch/`
+## 升級／安裝：放 /tmp → 執行 up-patch（2.002.0 起，一條路）
 
-`patch/YYYYMMDD/patch_gpt_projectapp_YYYYMMDD_v<版本>.tar.gz` 是給**已經裝好第二版的機器**用的更新包（只含變更檔，幾百 KB，不必重抓整包）。
+每一版只出一個包：`patch_projectapp_<版本>_<yyyymmddHHMM>.tar.gz`（內含完整安裝包約 85 MB，超過 50 MB 所以放在 Releases 頁面該版本的附件；同名 `.sha256` 可先核對）。
 
-- **永遠套版本最大的那一包就好**：看檔名最後的 `v<版本>`，**照數字比，不要照文字比**（例：`2.000.30` 比 `2.000.9` 新；版本格式是「大版本.小功能.小功能修補」）。版本相同取日期較晚的。
-- 每一包都是**累積包**：從包內 `copy_commands.md` 寫的基準版本（`BASE_VER`）一路到該版本，中間漏掉的不用補。比基準版本舊的機器會被 `patch.sh` 拒絕，請改用完整包。
-- **從 v1.001.0 升級請用完整包**（見本儲存庫的 Releases 頁面，例如 `full-2.000.30`；第二版執行環境有變，修補包不適用）。
-
-目前最新：`patch/20261126/patch_gpt_projectapp_20261126_v2.001.0.tar.gz`（累積 2.000.30 → 2.001.0；更早的 2.000.28 機器先套 `v2.000.30` 那包，或直接用完整包）。
+**下載 Releases 裡的 `patch_projectapp_*.tar.gz` → 放 /tmp → 執行 up-patch。** 目前最新：[full-2.002.0](https://github.com/alienid4/GPT_ProjectApp/releases/tag/full-2.002.0)（`patch_projectapp_2.002.0_202611261902.tar.gz`）。不用再分修補包或完整包，也不用帶參數：
 
 ```bash
-cd /tmp && sha256sum -c patch_gpt_projectapp_YYYYMMDD_v<版本>.sha256
-sudo mkdir -m 700 /root/projectapp-patch
-sudo tar -xzf patch_gpt_projectapp_YYYYMMDD_v<版本>.tar.gz -C /root/projectapp-patch
-sudo bash /root/projectapp-patch/ProjectApp_v<版本>-patch_*/patch.sh
+# 1. 把 patch_projectapp_<版本>_<時間>.tar.gz 放進 /tmp
+# 2. 執行（跟 WEBIT 一樣）
+sh /tmp/up-patch.ksh
+# 3. 看最後一行：
+#    OK ProjectApp 2.001.0 → 2.002.0
+#    FAIL 已自動退回 2.001.0，原因：…，log：/var/log/projectapp/patch_<時間>.log
 ```
 
-同目錄的 `.sha256` 就是第一行核對用的。`patch.sh` 會先備份、失敗自動退回；重複執行會回報「已是新版」，不會壞。詳細結束碼與退回方式見包內 `copy_commands.md`、`ROLLBACK.md`。
-修補包超過 50 MB 時不放進本儲存庫，改放在 Releases 頁面同版本的附件。
+包裡的 `patch.sh` 會自己判斷這台是：**全新機**（已先跑過設定精靈）、**v1.000.0**（`/opt/it-workboard`，原地接手）、**v1.001.x／2.x**（升級）或**已經是同一版**（只核對，回報「已是 X」）。
 
-> 狀態：**測試候選，不是正式核准**。審查由 Google Gemini（Antigravity）替補擔任，執行紀錄在作者機器產生，只能核對一致性、無法排除偽造；正式部署須使用者本人批准。
+- **不是 ProjectApp 的主機立刻停、什麼都不改**（例如 WEBIT 主機上 /tmp 最新一包剛好是這個）。
+- 先做 sha256 檢查；升級前自動備份資料庫；提交前任何一步失敗自動退回並啟動舊版。
+- 服務帳號 `projectapp` 不存在會自動建立（system、nologin、無家目錄）。
+- v1.000.0 有手改過的檔（例如 `auth.py` 快取），只要是已知可還原的，會先備份到 `/root/projectapp-handfix/<時間>/`（畫面印出路徑）、還原原版再接手；其他差異照舊拒絕並列出檔名。
+- log 固定在 `/var/log/projectapp/patch_<時間>.log`；完整安裝包留在 `/root/projectapp-bundle/`，日後維運指令用它。
+- 全新機第一次要先回答 AD 等設定：把包解到 /tmp 後 `sudo bash /tmp/patch_projectapp_<版本>_<時間>/patch.sh --setup`，完成後再跑一次 up-patch。只想看會走哪條路：`patch.sh --check`（什麼都不改）。
+- 詳細行為、結束碼與事後退回：安裝包內 `README_INSTALL.md`「升級」一節。
 
-## 從 v1.000.0（`/opt/it-workboard`）升級 → 用完整包原地接手，不能用修補包
+2.001.0 以前的舊做法（`patch/YYYYMMDD/` 修補包、Releases 的 `full-<版本>` 完整包）保留在原處供查閱，新版不再用。
 
-v1.000.0 是舊的單一目錄配置，`patch.sh` 會拒絕（什麼都不改）。請從 Releases 下載最新的完整升級包（例如 `full-2.001.0`），先核對 sha256 再執行：
-
-```bash
-sha256sum -c ProjectApp_v<版本>-full_<時間>.tar.gz.sha256
-sudo mkdir -m 700 /root/projectapp-bundle
-sudo tar -xzf ProjectApp_v<版本>-full_<時間>.tar.gz -C /root/projectapp-bundle
-B=/root/projectapp-bundle/ProjectApp_v<版本>-full_<時間>
-sudo bash $B/INSTALL.sh --production --check                 # 只列出接手計畫，不改任何東西
-sudo bash $B/INSTALL.sh --production --install --adopt-v1000
-```
-
-- 資料庫與附件留在原位，只換程式；舊目錄 `/opt/it-workboard` 全程不讀寫，留作回退依據；失敗或中斷會自動回到舊版（中斷時重跑同一指令，或 `INSTALL.sh --production --recover`）。
-- 接手後一旦有人寫入新資料，就不能再自動退回 v1.000.0，要退只能用配對備份還原。
-- 驗證範圍：只在「AlmaLinux 9 容器、os-release 模擬成 RHEL 9.6」測過；**真正的 RHEL 9.6 機器還沒驗證**。
+> 狀態：**測試候選，不是正式核准**。審查由 Google Gemini（Antigravity）替補擔任，執行紀錄在作者機器產生，只能核對一致性、無法排除偽造；正式部署須使用者本人批准。驗證範圍：AlmaLinux 9 容器（v1.000.0 情境把 os-release 模擬成 RHEL 9.6）；**真正的 RHEL 9.6 機器（公司測試機）還沒驗證**。
 
 ## 本機試用（Linux）
 
